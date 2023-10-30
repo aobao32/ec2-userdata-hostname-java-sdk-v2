@@ -1,28 +1,3 @@
-# 使用AWS Java SDK V2创建EC2、并通过Userdata指定Hostname
-
-本文介绍使用AWS Java SDK V2创建EC2、并通过Userdata指定Hostname。
-
-## 一、环境准备
-
-```
-git clone https://github.com/aobao32/ec2-userdata-hostname-java-sdk-v2.git
-cd ec2-userdata-hostname-java-sdk-v2
-mvn clean install
-```
-
-运行程序
-
-```
-java -jar target/EC2J2Project-1.0-SNAPSHOT.jar hostname AMI-ID
-```
-
-即可创建EC2。
-
-如果需要指定VPC、指定子网、指定安全组、或挂载第二个磁盘，请参考文档自行调整代码。
-
-## 二、代码
-
-```java
 package com.example.ec2;
 
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
@@ -119,22 +94,3 @@ public class CreateEC2Instance {
         return "";
     }
 }
-```
-
-## 三、运行效果
-
-![](https://blogimg.bitipcman.com/workshop/EC2-SDK/java.png)
-
-## 四、参考文档
-
-Amazon EC2 examples using SDK for Java 2.x
-
-[https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/java_ec2_code_examples.html]()
-
-aws-doc-sdk-examples - create isntance
-
-[https://github.com/awsdocs/aws-doc-sdk-examples/blob/main/javav2/example_code/ec2/src/main/java/com/example/ec2/CreateInstance.java]()
-
-Userdata
-
-[https://github.com/awsdocs/aws-doc-sdk-examples/blob/main/javav2/example_code/ec2/src/main/java/com/example/ec2/CreateInstance.java]()
