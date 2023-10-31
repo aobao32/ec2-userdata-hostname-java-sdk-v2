@@ -4,7 +4,7 @@
 
 在通过API创建EC2时候，需要提供几个基础参数，包括机型、AMI ID参数是必须显式指定的。其他参数是可选，如果不指定，AWS会使用默认的VPC、随机分配子网、默认的安全组等参数进行EC2创建。在这些参数中，没有名为`Hostname`主机名的参数。不过，由于AWS的API支持传入Userdata，可以在创建EC2后自动在EC2上执行脚本，因此，指定主机名的功能可通过在创建EC2的请求时候加上一段Userdata脚本解决。脚本如下。
 
-```
+```shell
 #!/bin/bash
 hostnamectl set-hostname yourhostname
 ```
@@ -33,7 +33,7 @@ hostnamectl set-hostname yourhostname
 
 ## 二、环境准备
 
-```
+```shell
 git clone https://github.com/aobao32/ec2-userdata-hostname-java-sdk-v2.git
 cd ec2-userdata-hostname-java-sdk-v2
 mvn clean install
