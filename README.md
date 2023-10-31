@@ -1,8 +1,37 @@
 # 使用AWS Java SDK V2创建EC2、并通过Userdata指定Hostname
 
+## 一、背景
+
+在通过API创建EC2时候，需要提供几个基础参数，包括机型、AMI ID参数是必须显式指定的。其他参数是可选，如果不指定，AWS会使用默认的VPC、随机分配子网、默认的安全组等参数进行EC2创建。在这些参数中，没有名为`Hostname`主机名的参数。不过，由于AWS的API支持传入Userdata，可以在创建EC2后自动在EC2上执行脚本，因此，指定主机名的功能可通过在创建EC2的请求时候加上一段Userdata脚本解决。脚本如下。
+
+```
+#!/bin/bash
+hostnamectl set-hostname yourhostname
+```
+
+以Java语言为例，将Userdata片段合并到API中就是：
+
+```java
+        RunInstancesRequest runRequest = RunInstancesRequest.builder()
+            .imageId(amiId)
+            .instanceType(InstanceType.T3_SMALL)
+            .maxCount(1)
+            .minCount(1)
+            .userData(userdatabase64)
+            .build();
+```
+
+传输Userdata和使用的语言无关，任何一种语言都可以调用SDK以快速使用AWS API。完全不适用任何SDK，而是靠拼接HTTPS头Post到AWS的API Endpoint也是可以工作的。[这篇文档](https://blog.bitipcman.com/create-ec2-with-userdata-to-modify-hostname-on-awscli-and-python/)介绍了使用AWSCLI的Shell脚本和Python3的boto3 SDK来完成这一工作。
+
+注意事项：
+
+- 不同的开发语言的SDK，对传入Userdata要求不一样，例如AWSCLI可直接写文本。Java SDK V2要求事先Base64编码再传入
+- 创建EC2使用的AMI必须能够正常启动和联网，因为Userdata是要在EC2启动后通过Metadata获取Userdata，如果本AMI镜像启动后是没有网卡的镜像，那么Userdata也无法执行
+- Userdata必须为两行，第一行指定Shell脚本后，必须包含一个换行符。
+
 本文介绍使用AWS Java SDK V2创建EC2、并通过Userdata指定Hostname。
 
-## 一、环境准备
+## 二、环境准备
 
 ```
 git clone https://github.com/aobao32/ec2-userdata-hostname-java-sdk-v2.git
@@ -123,7 +152,7 @@ public class CreateEC2Instance {
 
 ## 三、运行效果
 
-![](https://blogimg.bitipcman.com/workshop/EC2-SDK/java.png)
+![](https://blogimg.bitipcman.com/workshop/EC2-SDK/ec2-hostname.png)
 
 ## 四、参考文档
 
