@@ -21,7 +21,7 @@ hostnamectl set-hostname yourhostname
             .build();
 ```
 
-传输Userdata和使用的语言无关，任何一种语言都可以调用SDK以快速使用AWS API。完全不适用任何SDK，而是靠拼接HTTPS头Post到AWS的API Endpoint也是可以工作的。[这篇文档](https://blog.bitipcman.com/create-ec2-with-userdata-to-modify-hostname-on-awscli-and-python/)介绍了使用AWSCLI的Shell脚本和Python3的boto3 SDK来完成这一工作。
+传输Userdata和使用的语言无关，任何一种语言都可以调用SDK以快速使用AWS API。完全不调用任何SDK，而是靠拼接HTTPS头Post到AWS的API Endpoint也是可以工作的。[这篇文档](https://blog.bitipcman.com/create-ec2-with-userdata-to-modify-hostname-on-awscli-and-python/)介绍了使用AWSCLI的Shell脚本和Python3的boto3 SDK来完成这一工作。
 
 注意事项：
 
