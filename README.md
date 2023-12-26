@@ -1,15 +1,31 @@
 # 使用AWS Java SDK V2创建EC2、并通过Userdata指定Hostname
 
+本文介绍了如果通过Userdata在首次创建EC2时候自定义主机名Hostname。本文使用Java语言，通过AWSSDK的方式调用API发起操作。本文提供了代码和POM参考，在Amazon Linux 2的EC2上编译、测试通过。
+
 ## 一、背景
 
-在通过API创建EC2时候，需要提供几个基础参数，包括机型、AMI ID参数是必须显式指定的。其他参数是可选，如果不指定，AWS会使用默认的VPC、随机分配子网、默认的安全组等参数进行EC2创建。在这些参数中，没有名为`Hostname`主机名的参数。不过，由于AWS的API支持传入Userdata，可以在创建EC2后自动在EC2上执行脚本，因此，指定主机名的功能可通过在创建EC2的请求时候加上一段Userdata脚本解决。脚本如下。
+### 1、原理
+
+在通过API创建EC2时候，需要提供几个基础参数，包括机型、AMI ID参数是必须显式指定的。其他参数是可选，如果不指定，AWS会使用默认的VPC、随机分配子网、默认的安全组等参数进行EC2创建。在这些参数中，并没有名为`Hostname`主机名的参数。因此如果是需要创建EC2时候指定Hostname，直接传参数是不行的。
+
+虽然如此，本问题有很简单的Workaround，那就是将Hostname放在EC2的Userdata参数中传递过去，即可实现。原理是在创建EC2后自动，Userdata脚本会在EC2上自动执行，此时可进行修改本机默认密码、修改Hostname、修改DNS、修改SSH配置、安装软件包、拉取特定软件源、乃至安全加固等操作。因此，使用Userdata方式来修改主机名是易用便捷的。
+
+### 2、通过AWS控制台配置
+
+如果是在AWS控制台上创建EC2，那么Userdata脚本配置时候可以如下。
 
 ```shell
 #!/bin/bash
 hostnamectl set-hostname yourhostname
 ```
 
-以Java语言为例，将Userdata片段合并到API中就是：
+### 3、通过API发起操作
+
+传输Userdata和使用的语言无关，任何一种语言都可以调用SDK以快速使用AWS API。完全不调用任何SDK，而是靠拼接HTTPS头Post到AWS的API Endpoint也是可以工作的。
+
+通过AWSCLI的Shell方式和Python Boto3 SDK来设置Userdata修改主机名，请参考[这篇文档](https://blog.bitipcman.com/create-ec2-with-userdata-to-modify-hostname-on-awscli-and-python/)。
+
+本文使用SDK以Java语言为例，在Userdata中设置主机名的关键代码片段是：
 
 ```java
         RunInstancesRequest runRequest = RunInstancesRequest.builder()
@@ -20,9 +36,6 @@ hostnamectl set-hostname yourhostname
             .userData(userdatabase64)
             .build();
 ```
-
-传输Userdata和使用的语言无关，任何一种语言都可以调用SDK以快速使用AWS API。完全不调用任何SDK，而是靠拼接HTTPS头Post到AWS的API Endpoint也是可以工作的。[这篇文档](https://blog.bitipcman.com/create-ec2-with-userdata-to-modify-hostname-on-awscli-and-python/)介绍了使用AWSCLI的Shell脚本和Python3的boto3 SDK来完成这一工作。
-
 注意事项：
 
 - 不同的开发语言的SDK，对传入Userdata要求不一样，例如AWSCLI可直接写文本。Java SDK V2要求事先Base64编码再传入
@@ -31,25 +44,16 @@ hostnamectl set-hostname yourhostname
 
 本文介绍使用AWS Java SDK V2创建EC2、并通过Userdata指定Hostname。
 
-## 二、环境准备
+## 二、获取代码和编译
+
+### 1、主要代码
 
 ```shell
 git clone https://github.com/aobao32/ec2-userdata-hostname-java-sdk-v2.git
 cd ec2-userdata-hostname-java-sdk-v2
-mvn clean install
 ```
 
-运行程序
-
-```
-java -jar target/EC2J2Project-1.0-SNAPSHOT.jar hostname AMI-ID
-```
-
-即可创建EC2。
-
-如果需要指定VPC、指定子网、指定安全组、或挂载第二个磁盘，请参考文档自行调整代码。
-
-## 二、代码
+主要代码（即查看Github中的`src\main\java\com\example\ec2\`目录中的`CreateEC2Instance.java`文件）如下：
 
 ```java
 package com.example.ec2;
@@ -150,11 +154,145 @@ public class CreateEC2Instance {
 }
 ```
 
-## 三、运行效果
+如果需要指定VPC、指定子网、指定安全组、或挂载第二个磁盘，请参考文档自行调整代码。
+
+### 2、编译需要的POM文件
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>EC2J2Project</groupId>
+    <artifactId>EC2J2Project</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>1.8</java.version>
+    </properties>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.22.1</version>
+                <configuration>
+                    <groups>IntegrationTest</groups>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.1</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
+            <plugin>
+		       <groupId>org.apache.maven.plugins</groupId>
+		         <artifactId>maven-shade-plugin</artifactId>
+			     <version>3.0.0</version>
+			        <executions>
+					   <execution>
+						<phase>package</phase>
+						  <goals>
+						    <goal>shade</goal>
+						  </goals>
+						</execution>
+					</executions>
+		    </plugin>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-jar-plugin</artifactId>
+              <version>3.1.0</version>
+              <configuration>
+                <archive>
+                  <manifest>
+                    <addClasspath>true</addClasspath>
+                    <classpathPrefix>lib/</classpathPrefix>
+                    <mainClass>com.example.ec2.CreateEC2Instance</mainClass>
+                  </manifest>
+                </archive>
+              </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>2.20.45</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>5.9.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.9.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-commons</artifactId>
+            <version>1.9.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <version>1.9.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>ec2</artifactId>
+        </dependency>
+       <dependency>
+           <groupId>org.slf4j</groupId>
+           <artifactId>slf4j-api</artifactId>
+           <version>2.0.9</version>
+       </dependency>
+       <dependency>
+           <groupId>org.slf4j</groupId>
+           <artifactId>slf4j-simple</artifactId>
+           <version>2.0.9</version>
+       </dependency>
+    </dependencies>
+</project>
+```
+
+### 3、编译和运行
+
+返回到`pom.xml`文件所在的代码根目录。编译并运行程序。编译后target目录下获得Jar文件。执行这个文件即可创建EC2。
+
+```
+mvn clean install
+java -jar target/EC2J2Project-1.0-SNAPSHOT.jar hostname AMI-ID
+```
+
+### 4、运行效果
+
+可看到代码正常输出了创建EC2之后的EC2 ID。这个ID也就是AWS控制台上显示的`i-xxxxx`的ID，这个编号是要创建成功后才返回的，创建失败的话不会返回这个ID。
 
 ![](https://blogimg.bitipcman.com/workshop/EC2-SDK/ec2-hostname.png)
 
-## 四、参考文档
+## 三、参考文档
 
 Amazon EC2 examples using SDK for Java 2.x
 
@@ -164,6 +302,6 @@ aws-doc-sdk-examples - create isntance
 
 [https://github.com/awsdocs/aws-doc-sdk-examples/blob/main/javav2/example_code/ec2/src/main/java/com/example/ec2/CreateInstance.java]()
 
-Userdata
+使用Userdata的代码样例
 
 [https://github.com/awsdocs/aws-doc-sdk-examples/blob/main/javav2/example_code/ec2/src/main/java/com/example/ec2/CreateInstance.java]()
