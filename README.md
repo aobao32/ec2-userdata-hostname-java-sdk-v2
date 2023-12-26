@@ -277,11 +277,14 @@ public class CreateEC2Instance {
 </project>
 ```
 
-### 3、编译和运行
+### 3、OpenJDK安装、编译和运行
+
+本文以Amazon Linux 2为例。
 
 返回到`pom.xml`文件所在的代码根目录。编译并运行程序。编译后target目录下获得Jar文件。执行这个文件即可创建EC2。
 
 ```
+yum install -y java-11-amazon-corretto maven-amazon-corretto11 
 mvn clean install
 java -jar target/EC2J2Project-1.0-SNAPSHOT.jar hostname AMI-ID
 ```
